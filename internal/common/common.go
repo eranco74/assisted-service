@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const MinMasterHostsNeededForInstallation = 3
+const MinMasterHostsNeededForInstallation = 2
 
 const HostCACertPath = "/etc/assisted-service/service-ca-cert.crt"
 
