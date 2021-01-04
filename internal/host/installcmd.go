@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-openapi/swag"
+
 	"github.com/alessio/shellescape"
 	"github.com/openshift/assisted-service/internal/events"
 	"github.com/openshift/assisted-service/internal/versions"
@@ -96,7 +98,7 @@ func (i *installCmd) GetSteps(ctx context.Context, host *models.Host) ([]*models
 func (i *installCmd) getFullInstallerCommand(cluster *common.Cluster, host *models.Host, bootdevice string) (string, error) {
 
 	role := host.Role
-	if host.Bootstrap {
+	if host.Bootstrap && swag.StringValue(cluster.HighAvailabilityMode) != models.ClusterHighAvailabilityModeNone {
 		role = models.HostRoleBootstrap
 	}
 
