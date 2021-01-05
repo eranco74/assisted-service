@@ -228,7 +228,9 @@ func If(id stringer) stateswitch.Condition {
 //check if we should move to finalizing state
 func (th *transitionHandler) IsFinalizing(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) (bool, error) {
 	sCluster, ok := sw.(*stateCluster)
-
+	if swag.StringValue(sCluster.cluster.HighAvailabilityMode) == models.ClusterHighAvailabilityModeNone {
+		return true, nil
+	}
 	installedStatus := []string{models.HostStatusInstalled}
 
 	// Move to finalizing state when 3 masters and at least 1 worker (if workers are given) moved to installed state
@@ -243,7 +245,9 @@ func (th *transitionHandler) IsFinalizing(sw stateswitch.StateSwitch, args state
 //check if we should stay in installing state
 func (th *transitionHandler) IsInstalling(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) (bool, error) {
 	sCluster, _ := sw.(*stateCluster)
-
+	if swag.StringValue(sCluster.cluster.HighAvailabilityMode) == models.ClusterHighAvailabilityModeNone {
+		return true, nil
+	}
 	installingStatuses := []string{models.HostStatusInstalling, models.HostStatusInstallingInProgress,
 		models.HostStatusInstalled, models.HostStatusInstallingPendingUserAction}
 	return th.enoughMastersAndWorkers(sCluster, installingStatuses), nil
