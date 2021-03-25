@@ -118,6 +118,7 @@ var Options struct {
 	DeregisterWorkerInterval    time.Duration `envconfig:"DEREGISTER_WORKER_INTERVAL" default:"1h"`
 	EnableDeletedUnregisteredGC bool          `envconfig:"ENABLE_DELETE_UNREGISTER_GC" default:"true"`
 	EnableDeregisterInactiveGC  bool          `envconfig:"ENABLE_DEREGISTER_INACTIVE_GC" default:"true"`
+	SkipIsoUpload               bool          `envconfig:"SKIP_ISO_UPLOAD" default:"false"`
 }
 
 func InitLogs() *logrus.Entry {
@@ -414,6 +415,10 @@ func main() {
 				})
 			}
 		case deployment_type_onprem, deployment_type_ocp:
+			if Options.DeployTarget == deployment_type_onprem && Options.SkipIsoUpload {
+				log.Info("Skipping ISO upload")
+				break
+			}
 			for version := range openshiftVersionsMap {
 				currVresion := version
 				errs.Go(func() error {
