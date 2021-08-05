@@ -1537,6 +1537,53 @@ var _ = Describe("Refresh Host", func() {
 		}
 	})
 
+	Context("pending user action timeout", func() {
+
+		BeforeEach(func() {
+			mockDefaultClusterHostRequirements(mockHwValidator)
+		})
+
+		tests := []struct {
+			hostCheckInAt strfmt.DateTime
+			expectTimeout bool
+		}{
+			{strfmt.DateTime(time.Now().Add(-(7 * time.Hour))), false},
+			{strfmt.DateTime(time.Now().Add(-(11 * time.Hour))), true},
+		}
+
+		for _, t := range tests {
+			t := t
+			It(fmt.Sprintf("checking timeout for pending user action host checked in at %s", t.hostCheckInAt), func() {
+				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusInstallingPendingUserAction)
+				host.Inventory = hostutil.GenerateMasterInventory()
+				host.Role = models.HostRoleMaster
+				host.CheckedInAt = t.hostCheckInAt
+				Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+				cluster = hostutil.GenerateTestCluster(clusterId, "1.2.3.0/24")
+				cluster.Status = swag.String(models.ClusterStatusInstallingPendingUserAction)
+				Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
+				if t.expectTimeout {
+					mockEvents.EXPECT().AddEvent(
+						gomock.Any(),
+						host.InfraEnvID,
+						&hostId,
+						hostutil.GetEventSeverityFromHostStatus(models.HostStatusError),
+						gomock.Any(),
+						gomock.Any())
+				}
+				err := hapi.RefreshStatus(ctx, &host, db)
+				Expect(err).ShouldNot(HaveOccurred())
+				var resultHost models.Host
+				Expect(db.Take(&resultHost, "id = ? and cluster_id = ?", hostId.String(), clusterId.String()).Error).ToNot(HaveOccurred())
+				if t.expectTimeout {
+					Expect(swag.StringValue(resultHost.Status)).Should(Equal(models.HostStatusError))
+				} else {
+					Expect(swag.StringValue(resultHost.Status)).Should(Equal(models.HostStatusInstallingPendingUserAction))
+				}
+			})
+		}
+	})
+
 	Context("host disconnected & installation timeout", func() {
 
 		BeforeEach(func() {

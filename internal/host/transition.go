@@ -576,6 +576,14 @@ func (th *transitionHandler) HostNotResponsiveWhileInstallation(sw stateswitch.S
 	return funk.Contains(disconnectionValidationStages, sHost.host.Progress.CurrentStage) && !hostIsResponsive(sHost.host), nil
 }
 
+func (th *transitionHandler) HostTimeoutWhilePendingUserAction(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) (bool, error) {
+	sHost, ok := sw.(*stateHost)
+	if !ok {
+		return false, errors.New("HostNotResponsiveWhileInstallation incompatible type of StateSwitch")
+	}
+	return time.Since(time.Time(sHost.host.CheckedInAt)) > PendingUserActionTimeout, nil
+}
+
 func getFailedValidations(params *TransitionArgsRefreshHost) []string {
 	var failedValidations []string
 

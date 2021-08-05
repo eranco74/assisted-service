@@ -464,6 +464,16 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		DestinationState: stateswitch.State(models.HostStatusError),
 		PostTransition:   th.PostRefreshHost(statusInfoConnectionTimedOut),
 	})
+	// Connection time out while host pending user action
+	sm.AddTransition(stateswitch.TransitionRule{
+		TransitionType: TransitionTypeRefresh,
+		SourceStates: []stateswitch.State{
+			stateswitch.State(models.HostStatusInstallingPendingUserAction)},
+		Condition:        th.HostTimeoutWhilePendingUserAction,
+		DestinationState: stateswitch.State(models.HostStatusError),
+		PostTransition:   th.PostRefreshHost(statusInfoConnectionTimedOut),
+	})
+
 	shouldIgnoreInstallationProgressTimeout := stateswitch.And(If(StageInWrongBootStages), If(ClusterPendingUserAction))
 
 	sm.AddTransition(stateswitch.TransitionRule{

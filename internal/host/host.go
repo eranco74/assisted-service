@@ -88,6 +88,8 @@ var InstallationTimeout = 20 * time.Minute
 
 var MaxHostDisconnectionTime = 3 * time.Minute
 
+var PendingUserActionTimeout = 10 * time.Hour
+
 type LogTimeoutConfig struct {
 	LogCollectionTimeout time.Duration `envconfig:"HOST_LOG_COLLECTION_TIMEOUT" default:"10m"`
 	LogPendingTimeout    time.Duration `envconfig:"HOST_LOG_PENDING_TIMEOUT" default:"2m"`
