@@ -530,6 +530,8 @@ func (m *Manager) ClusterMonitoring() {
 			break
 		}
 		m.log.Debugf("We are going to monitor %d, query is: %v", len(clusters), query)
+		m.log.Infof("Going to sleep")
+		time.Sleep(time.Minute * 10)
 		for _, cluster := range clusters {
 			if !m.leaderElector.IsLeader() {
 				m.log.Debugf("Not a leader, exiting ClusterMonitoring")
