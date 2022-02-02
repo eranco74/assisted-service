@@ -111,7 +111,7 @@ type Config struct {
 	DiskEncryptionSupport           bool              `envconfig:"DISK_ENCRYPTION_SUPPORT" default:"true"`
 	// TODO: remove when baremetal will be supported in arm
 	// this env allows to set specific image to extract openshift-baremetal-install
-	InstallerReleaseImageOverrideUnsupported string `envconfig:"INSTALLER_RELEASE_IMAGE_OVERRIDE_UNSUPPORTED" default:""`
+	AllowInstallerReleaseImageOverrideUnsupported bool `envconfig:"ALLOW_INSTALLER_RELEASE_IMAGE_OVERRIDE_UNSUPPORTED" default:"false"`
 }
 
 const minimalOpenShiftVersionForSingleNode = "4.8.0-0.0"
@@ -768,7 +768,7 @@ func (b *bareMetalInventory) getNewClusterCPUArchitecture(newClusterParams *mode
 		return common.DefaultCPUArchitecture, nil
 	}
 
-	if !swag.BoolValue(newClusterParams.UserManagedNetworking) && b.InstallerReleaseImageOverrideUnsupported == "" {
+	if !swag.BoolValue(newClusterParams.UserManagedNetworking) &&  !b.AllowInstallerReleaseImageOverrideUnsupported {
 		return "", errors.Errorf("Non x86_64 CPU architectures are supported only with User Managed Networking")
 	}
 
@@ -2111,6 +2111,7 @@ func (b *bareMetalInventory) generateClusterInstallConfig(ctx context.Context, c
 		return errors.Wrapf(err, "failed to get install config for cluster %s", cluster.ID)
 	}
 
+	installerReleaseImageOverride := ""
 	releaseImage, err := b.versionsHandler.GetReleaseImage(cluster.OpenshiftVersion, cluster.CPUArchitecture)
 	if err != nil {
 		msg := fmt.Sprintf("failed to get OpenshiftVersion for cluster %s with openshift version %s", cluster.ID, cluster.OpenshiftVersion)
@@ -2118,7 +2119,21 @@ func (b *bareMetalInventory) generateClusterInstallConfig(ctx context.Context, c
 		return errors.Wrapf(err, msg)
 	}
 
-	if err := b.generator.GenerateInstallConfig(ctx, cluster, cfg, *releaseImage.URL); err != nil {
+	// In case cpu architecture is not x86_64 and platform is baremetal , we should extract openshift-baremetal-installer
+	// from x86_64 release image as there is no x86_64 openshift-baremetal-installer executable in arm image
+	if cluster.CPUArchitecture != common.DefaultCPUArchitecture && *cluster.Platform.Type == models.PlatformTypeBaremetal && b.AllowInstallerReleaseImageOverrideUnsupported {
+		defaultArchImage, err := b.versionsHandler.GetReleaseImage(cluster.OpenshiftVersion, common.DefaultCPUArchitecture)
+		if err != nil {
+			msg := fmt.Sprintf("failed to get image for installer image override " +
+				"for cluster %s with openshift version %s", cluster.ID, cluster.OpenshiftVersion)
+			log.WithError(err).Errorf(msg)
+			return errors.Wrapf(err, msg)
+		}
+		installerReleaseImageOverride = *defaultArchImage.URL
+	}
+
+
+	if err := b.generator.GenerateInstallConfig(ctx, cluster, cfg, *releaseImage.URL, installerReleaseImageOverride); err != nil {
 		msg := fmt.Sprintf("failed generating install config for cluster %s", cluster.ID)
 		log.WithError(err).Error(msg)
 		return errors.Wrap(err, msg)

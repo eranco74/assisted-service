@@ -328,6 +328,7 @@ type installerGenerator struct {
 	operatorsApi             operators.API
 	installInvoker           string
 	providerRegistry         registry.ProviderRegistry
+	installerReleaseImageOverride string
 }
 
 // IgnitionConfig contains the attributes required to build the discovery ignition file
@@ -359,7 +360,7 @@ func NewBuilder(log logrus.FieldLogger, staticNetworkConfig staticnetworkconfig.
 // NewGenerator returns a generator that can generate ignition files
 func NewGenerator(workDir string, installerDir string, cluster *common.Cluster, releaseImage string, releaseImageMirror string,
 	serviceCACert, installInvoker string, s3Client s3wrapper.API, log logrus.FieldLogger, operatorsApi operators.API,
-	providerRegistry registry.ProviderRegistry) Generator {
+	providerRegistry registry.ProviderRegistry, installerReleaseImageOverride string) Generator {
 	return &installerGenerator{
 		cluster:                  cluster,
 		log:                      log,
@@ -373,6 +374,7 @@ func NewGenerator(workDir string, installerDir string, cluster *common.Cluster, 
 		operatorsApi:             operatorsApi,
 		installInvoker:           installInvoker,
 		providerRegistry:         providerRegistry,
+		installerReleaseImageOverride: installerReleaseImageOverride,
 	}
 }
 
@@ -386,17 +388,13 @@ func (g *installerGenerator) UploadToS3(ctx context.Context) error {
 func (g *installerGenerator) Generate(ctx context.Context, installConfig []byte, platformType models.PlatformType) error {
 	log := logutil.FromContext(ctx, g.log)
 
-	installerReleaseImage := g.releaseImage
 
-	// TODO: remove when baremetal will be supported in arm
-	// this env allows to set specific image to extract openshift-baremetal-install
-	val, present := os.LookupEnv("INSTALLER_RELEASE_IMAGE_OVERRIDE_UNSUPPORTED")
-	if present {
-		log.Infof("Overriding image to to extract openshift installer to %s", val)
-		installerReleaseImage = val
+	// In case we don't want to override image for extracting installer use release one
+	if g.installerReleaseImageOverride == "" {
+		g.installerReleaseImageOverride = g.releaseImage
 	}
 
-	installerPath, err := installercache.Get(installerReleaseImage, g.releaseImageMirror, g.installerDir,
+	installerPath, err := installercache.Get(g.installerReleaseImageOverride, g.releaseImageMirror, g.installerDir,
 		g.cluster.PullSecret, platformType, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to get installer path")
