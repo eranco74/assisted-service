@@ -25,7 +25,7 @@ require (
 	github.com/go-openapi/runtime v0.19.24
 	github.com/go-openapi/spec v0.19.9
 	github.com/go-openapi/strfmt v0.19.5
-	github.com/go-openapi/swag v0.19.9
+	github.com/go-openapi/swag v0.21.1
 	github.com/go-openapi/validate v0.19.10
 	github.com/golang-collections/go-datastructures v0.0.0-20150211160725-59788d5eb259
 	github.com/golang/mock v1.5.0
@@ -51,8 +51,7 @@ require (
 	github.com/openshift/hive/apis v0.0.0-20210506000654-5c038fb05190
 	github.com/openshift/machine-api-operator v0.2.1-0.20201002104344-6abfb5440597
 	github.com/ory/dockertest/v3 v3.6.3
-	github.com/ovirt/go-client-log v1.0.1 // indirect
-	github.com/ovirt/go-ovirt-client v0.7.1 // indirect
+	github.com/ovirt/go-ovirt-client v0.7.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pelletier/go-toml v1.8.1
 	github.com/pkg/errors v0.9.1
