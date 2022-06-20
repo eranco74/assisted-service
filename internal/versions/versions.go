@@ -255,6 +255,7 @@ func (h *handler) GetReleaseImage(openshiftVersion, cpuArchitecture string) (*mo
 		// Empty implies default CPU architecture
 		cpuArchitecture = common.DefaultCPUArchitecture
 	}
+
 	// Filter Release images by specified CPU architecture
 	releaseImages := funk.Filter(h.releaseImages, func(releaseImage *models.ReleaseImage) bool {
 		return swag.StringValue(releaseImage.CPUArchitecture) == cpuArchitecture
@@ -267,9 +268,9 @@ func (h *handler) GetReleaseImage(openshiftVersion, cpuArchitecture string) (*mo
 		return *releaseImage.OpenshiftVersion == openshiftVersion
 	})
 
+	// Fallback to x.y version
+	versionKey, err := h.getKey(openshiftVersion)
 	if releaseImage == nil {
-		// Fallback to x.y version
-		versionKey, err := h.getKey(openshiftVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -278,7 +279,27 @@ func (h *handler) GetReleaseImage(openshiftVersion, cpuArchitecture string) (*mo
 		})
 	}
 
+	if releaseImage == nil {
+		// Fallback to the latest available patch version by x.y version
+		releaseImages = funk.Filter(releaseImages, func(releaseImage *models.ReleaseImage) bool {
+			imageVersionKey, err := h.getKey(*releaseImage.OpenshiftVersion)
+			if err != nil {
+				return false
+			}
+			return imageVersionKey == versionKey
+		})
+		sort.Slice(releaseImages, func(i, j int) bool {
+			v1, _ := version.NewVersion(*releaseImages.([]*models.ReleaseImage)[i].OpenshiftVersion)
+			v2, _ := version.NewVersion(*releaseImages.([]*models.ReleaseImage)[j].OpenshiftVersion)
+			return v1.GreaterThan(v2)
+		})
+		if !funk.IsEmpty(releaseImages) {
+			releaseImage = releaseImages.([]*models.ReleaseImage)[0]
+		}
+	}
+
 	if releaseImage != nil {
+		h.log.Infof("Found a match for: openshiftVersion: %s, CPU architecture: %s", openshiftVersion, cpuArchitecture)
 		return releaseImage.(*models.ReleaseImage), nil
 	}
 
@@ -350,7 +371,7 @@ func (h *handler) AddReleaseImage(releaseImageUrl, pullSecret, ocpReleaseVersion
 
 		// Store in releaseImages array
 		h.releaseImages = append(h.releaseImages, releaseImage.(*models.ReleaseImage))
-		h.log.Infof("Stored release version: %s", ocpReleaseVersion)
+		h.log.Infof("Stored release version: %s for CPU architecture: %s", ocpReleaseVersion, cpuArchitecture)
 	}
 
 	return releaseImage.(*models.ReleaseImage), nil

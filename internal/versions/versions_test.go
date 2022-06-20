@@ -389,6 +389,12 @@ var _ = Describe("list versions", func() {
 			Expect(*releaseImage.OpenshiftVersion).Should(Equal("4.9"))
 			Expect(*releaseImage.Version).Should(Equal("4.9-candidate"))
 		})
+		It("fetch release image by major.minor", func() {
+			releaseImage, err = h.GetReleaseImage("4.10.5", common.DefaultCPUArchitecture)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(*releaseImage.OpenshiftVersion).Should(Equal("4.10.1"))
+			Expect(*releaseImage.Version).Should(Equal("4.10.1-candidate"))
+		})
 
 		It("get from ReleaseImages", func() {
 			for _, key := range h.GetOpenshiftVersions() {
