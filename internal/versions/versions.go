@@ -255,6 +255,9 @@ func (h *handler) GetReleaseImage(openshiftVersion, cpuArchitecture string) (*mo
 		// Empty implies default CPU architecture
 		cpuArchitecture = common.DefaultCPUArchitecture
 	}
+	h.log.Infof("ERAN! GetReleaseImage, openshiftVersion: %s, CPU architecture: %s", openshiftVersion, cpuArchitecture)
+	h.log.Info("ERAN! GetReleaseImage, releaseImages content is: ", h.releaseImages)
+
 	// Filter Release images by specified CPU architecture
 	releaseImages := funk.Filter(h.releaseImages, func(releaseImage *models.ReleaseImage) bool {
 		return swag.StringValue(releaseImage.CPUArchitecture) == cpuArchitecture
@@ -274,7 +277,8 @@ func (h *handler) GetReleaseImage(openshiftVersion, cpuArchitecture string) (*mo
 			return nil, err
 		}
 		releaseImage = funk.Find(releaseImages, func(releaseImage *models.ReleaseImage) bool {
-			return *releaseImage.OpenshiftVersion == versionKey
+			currentReleaseVersion, _ := h.getKey(*releaseImage.OpenshiftVersion)
+			return currentReleaseVersion == versionKey
 		})
 	}
 
@@ -328,6 +332,8 @@ func (h *handler) AddReleaseImage(releaseImageUrl, pullSecret, ocpReleaseVersion
 			return nil, err
 		}
 	}
+	h.log.Infof("ERAN! AddReleaseImage, release version: %s, CPU architecture: %s", ocpReleaseVersion, cpuArchitecture)
+	h.log.Infof("ERAN! AddReleaseImage, releaseImages content is: %+v", h.releaseImages)
 
 	// Ensure a relevant OsImage exists
 	osImage, err := h.GetOsImage(ocpReleaseVersion, cpuArchitecture)
@@ -350,7 +356,7 @@ func (h *handler) AddReleaseImage(releaseImageUrl, pullSecret, ocpReleaseVersion
 
 		// Store in releaseImages array
 		h.releaseImages = append(h.releaseImages, releaseImage.(*models.ReleaseImage))
-		h.log.Infof("Stored release version: %s", ocpReleaseVersion)
+		h.log.Infof("Stored release version: %s for CPU architecture: %s", ocpReleaseVersion, cpuArchitecture)
 	}
 
 	return releaseImage.(*models.ReleaseImage), nil
