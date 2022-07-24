@@ -3089,6 +3089,8 @@ func filterReply(expected interface{}, input string) (string, error) {
 	return string(reply), nil
 }
 
+func (b *bareMetalInventory) insatllOCPonNTNX(
+
 func (b *bareMetalInventory) setMajorityGroupForCluster(clusterID *strfmt.UUID, db *gorm.DB) error {
 	return b.clusterApi.SetConnectivityMajorityGroupsForCluster(*clusterID, db)
 }

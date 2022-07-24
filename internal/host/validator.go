@@ -1384,7 +1384,7 @@ func (v *validator) shouldValidateDNSResolution(cluster *common.Cluster) (bool, 
 	if common.IsDay2Cluster(cluster) {
 		// All day 2 clusters that don't have managed networking, regardless of
 		// SNO or not, need DNS validations, as day-2 workers cannot benefit
-		// for the SNO dnsmasq hack that is levereged by the day-1 cluster.
+		// for the SNO dnsmasq hack that is leveraged by the day-1 cluster.
 	} else {
 		// This is a day-1, user-managed-networking cluster
 		networkCfg, err := network.NewConfig()

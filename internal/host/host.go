@@ -1047,11 +1047,14 @@ func (m *Manager) reportValidationStatusChanged(ctx context.Context, vc *validat
 					}
 					eventgen.SendHostValidationFailedEvent(ctx, m.eventsHandler, *h.ID, h.InfraEnvID, h.ClusterID,
 						hostutil.GetHostnameForMsg(h), v.ID.String())
-				}
-				if v.Status == ValidationSuccess && currentStatus == ValidationFailure {
+				} else if v.Status == ValidationSuccess && currentStatus == ValidationFailure {
 					log.Infof("Host %s: validation '%s' is now fixed", hostutil.GetHostnameForMsg(h), v.ID)
 					eventgen.SendHostValidationFixedEvent(ctx, m.eventsHandler, *h.ID, h.InfraEnvID, h.ClusterID,
 						hostutil.GetHostnameForMsg(h), v.ID.String())
+				} else if v.Status != currentStatus {
+					log.Infof("Host %s: validation '%s' status changed from %s to %s", hostutil.GetHostnameForMsg(h), v.ID, currentStatus, v.Status)
+					m.eventsHandler.SendHostEvent(*h.ID, h.InfraEnvID, h.ClusterID,
+						m.eventsHandler.HostValidationStatusChangedEvent(hostutil.GetHostnameForMsg(h), v.ID.String(), currentStatus, v.Status))
 				}
 			}
 		}
