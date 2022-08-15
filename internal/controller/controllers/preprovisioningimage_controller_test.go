@@ -21,6 +21,7 @@ import (
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,7 +100,7 @@ var _ = Describe("PreprovisioningImage reconcile", func() {
 		sId = strfmt.UUID(uuid.New().String())
 		pr = &PreprovisioningImageReconciler{
 			Client:                 c,
-			Log:                    common.GetTestLog(),
+			Log:                    logrus.New(),
 			Installer:              mockInstallerInternal,
 			CRDEventsHandler:       mockCRDEventsHandler,
 			IronicIgniotionBuilder: ironicIgnitionBuilder,
@@ -301,7 +302,7 @@ var _ = Describe("PreprovisioningImage reconcile", func() {
 	})
 	It("PreprovisioningImage doesn't accept ISO format", func() {
 		ppi = newPreprovisioningImage("testPPI", testNamespace, InfraEnvLabel, "testInfraEnv")
-		ppi.Spec.AcceptFormats = []metal3_v1alpha1.ImageFormat{metal3_v1alpha1.ImageFormatInitRD}
+		ppi.Spec.AcceptFormats = []metal3_v1alpha1.ImageFormat{"some random format"}
 		Expect(c.Create(ctx, ppi)).To(BeNil())
 
 		res, err := pr.Reconcile(ctx, newPreprovisioningImageRequest(ppi))
