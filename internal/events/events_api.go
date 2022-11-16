@@ -56,3 +56,45 @@ func (a *Api) V2ListEvents(ctx context.Context, params events.V2ListEventsParams
 	}
 	return events.NewV2ListEventsOK().WithPayload(ret)
 }
+
+// V2EventsSubscribe will register a call back url on a given even
+// This url will be called in case the event occur
+func (a *Api) V2EventsSubscribe(ctx context.Context, params events.V2EventsSubscribeParams) middleware.Responder {
+	log := logutil.FromContext(ctx, a.log)
+	log.Infof("EventsSubscribe: %+v", params)
+
+	eventSubscription, err := a.handler.CreateEventsSubscribe(ctx,
+		*params.NewEventSubscriptionParams.ClusterID,
+		*params.NewEventSubscriptionParams.EventName,
+		*params.NewEventSubscriptionParams.URL,
+	)
+	if err != nil {
+
+	}
+	return events.NewV2EventsSubscribeCreated().WithPayload(&eventSubscription)
+}
+
+func (a *Api) V2EventsSubscriptionGet(ctx context.Context, params events.V2EventsSubscriptionGetParams) middleware.Responder {
+	log := logutil.FromContext(ctx, a.log)
+	log.Infof("EventsSubscribe: %+v", params)
+
+	eventSubscription, err := a.handler.GetEventsSubscription(ctx,
+		params.SubscriptionID,
+	)
+	if err != nil {
+
+	}
+	return events.NewV2EventsSubscribeCreated().WithPayload(&eventSubscription)
+}
+
+func (a *Api) V2EventsSubscriptionDelete(ctx context.Context, params events.V2EventsSubscriptionDeleteParams) middleware.Responder {
+	log := logutil.FromContext(ctx, a.log)
+	log.Debugf("V2EventsSubscriptionDelete doing noting for no", params)
+	return events.NewV2EventsSubscriptionDeleteInternalServerError()
+}
+
+func (a *Api) V2EventsSubscriptionList(ctx context.Context, params events.V2EventsSubscriptionListParams) middleware.Responder {
+	log := logutil.FromContext(ctx, a.log)
+	log.Debugf("V2EventsSubscriptionGet doing noting for no", params)
+	return events.NewV2EventsSubscriptionListInternalServerError()
+}

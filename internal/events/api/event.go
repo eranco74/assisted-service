@@ -34,6 +34,10 @@ type Sender interface {
 	SendHostEventAtTime(ctx context.Context, event HostEvent, eventTime time.Time)
 	SendInfraEnvEvent(ctx context.Context, event InfraEnvEvent)
 	SendInfraEnvEventAtTime(ctx context.Context, event InfraEnvEvent, eventTime time.Time)
+	CreateEventsSubscribe(ctx context.Context, clusterID strfmt.UUID, eventName string, url string) (models.EventSubscription, error)
+	GetEventsSubscription(ctx context.Context, subscriptionID strfmt.UUID) (models.EventSubscription, error)
+	ListEventsSubscription(ctx context.Context, subscriptionID strfmt.UUID) ([]models.EventSubscription, error)
+	DeleteEventsSubscription(ctx context.Context, subscriptionID strfmt.UUID) error
 }
 
 //go:generate mockgen -source=event.go -package=api -destination=mock_event.go

@@ -4,8 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/swag"
+	"github.com/pkg/errors"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/openshift/assisted-service/internal/common"
@@ -14,6 +20,7 @@ import (
 	"github.com/openshift/assisted-service/pkg/auth"
 	logutil "github.com/openshift/assisted-service/pkg/log"
 	"github.com/openshift/assisted-service/pkg/requestid"
+	"github.com/openshift/assisted-service/restapi/operations/events"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -267,6 +274,89 @@ func (e Events) V2GetEvents(ctx context.Context, clusterID *strfmt.UUID, hostID 
 	}
 
 	return e.queryEvents(ctx, selectedCategories, clusterID, hostID, infraEnvID)
+}
+
+// EventsSubscribe will register a call back url on a given even
+// This url will be called in case the event occur
+func (e Events) EventsSubscribe(ctx context.Context, clusterID strfmt.UUID, eventName string, url string) (models.EventSubscription, error) {
+	log := logutil.FromContext(ctx, e.log)
+	log.Infof("New events subscription: cluster id %s, event name: %s, URL: ", clusterID, eventName, url)
+
+	txSuccess := false
+	tx := e.db.Begin()
+	defer func() {
+		if !txSuccess {
+			log.Error("EventsSubscribe failed")
+			tx.Rollback()
+		}
+		if r := recover(); r != nil {
+			log.Errorf("EventsSubscribe failed to recover: %s", r)
+			log.Error(string(debug.Stack()))
+			tx.Rollback()
+		}
+	}()
+
+	// TODO: verify the event name
+	// TODO: verify the cluster id
+	// TODO: verify the url is valid
+
+	//cluster, err := e.GetClusterInternal(ctx, events.V2GetClusterParams{ClusterID: *params.NewEventSubscriptionParams.ClusterID})
+	//if err != nil {
+	//	log.WithError(err).Errorf("failed to get cluster: %s", *params.NewEventSubscriptionParams.ClusterID)
+	//	if errors.Is(err, gorm.ErrRecordNotFound) {
+	//		return common.NewApiError(http.StatusNotFound, err)
+	//	}
+	//	return common.NewApiError(http.StatusInternalServerError, err)
+	//}
+	eventSubscription := models.EventSubscription{
+		ClusterID: &clusterID,
+		EventName: &eventName,
+		URL:       &url,
+		Status:    swag.String("Pending"),
+	}
+
+	err := e.db.Create(eventSubscription).Error
+	if err != nil {
+		log.Error(err)
+		return eventSubscription, err
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		log.Error(err)
+		return eventSubscription, err
+	}
+	txSuccess = true
+
+	return eventSubscription, nil
+
+}
+
+func (e Events) EventsSubscriptionGet(ctx context.Context, params events.V2EventsSubscriptionGetParams) middleware.Responder {
+	log := logutil.FromContext(ctx, e.log)
+
+	var eventSubscription models.EventSubscription
+	log.Debugf("Getting event subscription %s", params.SubscriptionID)
+	err := e.db.First(&eventSubscription, "id = ?", params.SubscriptionID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.NewApiError(http.StatusNotFound, err)
+		}
+		log.WithError(err).Errorf("Failed to find event subscription %s", params.SubscriptionID)
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+	return events.NewV2EventsSubscribeCreated().WithPayload(&eventSubscription)
+}
+
+func (e Events) EventsSubscriptionDelete(ctx context.Context, params events.V2EventsSubscriptionDeleteParams) middleware.Responder {
+	log := logutil.FromContext(ctx, e.log)
+	log.Debugf("V2EventsSubscriptionDelete doing noting for no", params)
+	return events.NewV2EventsSubscriptionDeleteInternalServerError()
+}
+
+func (e *Events) EventsSubscriptionList(ctx context.Context, params events.V2EventsSubscriptionListParams) middleware.Responder {
+	log := logutil.FromContext(ctx, e.log)
+	log.Debugf("V2EventsSubscriptionGet doing noting for no", params)
+	return events.NewV2EventsSubscriptionListInternalServerError()
 }
 
 func toProps(attrs ...interface{}) (result string, err error) {
