@@ -107,6 +107,18 @@ type API interface {
 	   V2DownloadInfraEnvFiles Downloads the customized ignition file for this host*/
 	V2DownloadInfraEnvFiles(ctx context.Context, params *V2DownloadInfraEnvFilesParams, writer io.Writer) (*V2DownloadInfraEnvFilesOK, error)
 	/*
+	   V2EventsSubscribe Subscribe a URL to be called upon events for a cluster.*/
+	V2EventsSubscribe(ctx context.Context, params *V2EventsSubscribeParams) (*V2EventsSubscribeCreated, error)
+	/*
+	   V2EventsSubscriptionDelete Delete events subscription.*/
+	V2EventsSubscriptionDelete(ctx context.Context, params *V2EventsSubscriptionDeleteParams) (*V2EventsSubscriptionDeleteNoContent, error)
+	/*
+	   V2EventsSubscriptionGet Get events subscription.*/
+	V2EventsSubscriptionGet(ctx context.Context, params *V2EventsSubscriptionGetParams) (*V2EventsSubscriptionGetOK, error)
+	/*
+	   V2EventsSubscriptionList Get events subscriptions.*/
+	V2EventsSubscriptionList(ctx context.Context, params *V2EventsSubscriptionListParams) (*V2EventsSubscriptionListOK, error)
+	/*
 	   V2GetCluster Retrieves the details of the OpenShift cluster.*/
 	V2GetCluster(ctx context.Context, params *V2GetClusterParams) (*V2GetClusterOK, error)
 	/*
@@ -935,6 +947,106 @@ func (a *Client) V2DownloadInfraEnvFiles(ctx context.Context, params *V2Download
 		return nil, err
 	}
 	return result.(*V2DownloadInfraEnvFilesOK), nil
+
+}
+
+/*
+V2EventsSubscribe Subscribe a URL to be called upon events for a cluster.
+*/
+func (a *Client) V2EventsSubscribe(ctx context.Context, params *V2EventsSubscribeParams) (*V2EventsSubscribeCreated, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "v2EventsSubscribe",
+		Method:             "POST",
+		PathPattern:        "/v2/events/subscription",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &V2EventsSubscribeReader{formats: a.formats},
+		AuthInfo:           a.authInfo,
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*V2EventsSubscribeCreated), nil
+
+}
+
+/*
+V2EventsSubscriptionDelete Delete events subscription.
+*/
+func (a *Client) V2EventsSubscriptionDelete(ctx context.Context, params *V2EventsSubscriptionDeleteParams) (*V2EventsSubscriptionDeleteNoContent, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "v2EventsSubscriptionDelete",
+		Method:             "DELETE",
+		PathPattern:        "/v2/events/subscription/{subscription_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &V2EventsSubscriptionDeleteReader{formats: a.formats},
+		AuthInfo:           a.authInfo,
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*V2EventsSubscriptionDeleteNoContent), nil
+
+}
+
+/*
+V2EventsSubscriptionGet Get events subscription.
+*/
+func (a *Client) V2EventsSubscriptionGet(ctx context.Context, params *V2EventsSubscriptionGetParams) (*V2EventsSubscriptionGetOK, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "v2EventsSubscriptionGet",
+		Method:             "GET",
+		PathPattern:        "/v2/events/subscription/{subscription_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &V2EventsSubscriptionGetReader{formats: a.formats},
+		AuthInfo:           a.authInfo,
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*V2EventsSubscriptionGetOK), nil
+
+}
+
+/*
+V2EventsSubscriptionList Get events subscriptions.
+*/
+func (a *Client) V2EventsSubscriptionList(ctx context.Context, params *V2EventsSubscriptionListParams) (*V2EventsSubscriptionListOK, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "v2EventsSubscriptionList",
+		Method:             "GET",
+		PathPattern:        "/v2/events/subscription",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &V2EventsSubscriptionListReader{formats: a.formats},
+		AuthInfo:           a.authInfo,
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*V2EventsSubscriptionListOK), nil
 
 }
 
