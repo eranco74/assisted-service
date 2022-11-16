@@ -175,6 +175,10 @@ type InstallerInternals interface {
 	ValidatePullSecret(secret string, username string) error
 	GetInfraEnvInternal(ctx context.Context, params installer.GetInfraEnvParams) (*common.InfraEnv, error)
 	V2UpdateHostInstallProgressInternal(ctx context.Context, params installer.V2UpdateHostInstallProgressParams) (*common.Host, error)
+	//V2EventsSubscribe(ctx context.Context, params installer.V2EventsSubscribeParams) middleware.Responder
+	//V2EventsSubscriptionDelete(ctx context.Context, params installer.V2EventsSubscriptionDeleteParams) middleware.Responder
+	//V2EventsSubscriptionGet(ctx context.Context, params installer.V2EventsSubscriptionGetParams) middleware.Responder
+	//V2EventsSubscriptionList(ctx context.Context, params installer.V2EventsSubscriptionListParams) middleware.Responder
 }
 
 //go:generate mockgen --build_flags=--mod=mod -package bminventory -destination mock_crd_utils.go . CRDUtils
@@ -5817,6 +5821,67 @@ func (b *bareMetalInventory) HostWithCollectedLogsExists(clusterId strfmt.UUID) 
 
 func (b *bareMetalInventory) GetKnownApprovedHosts(clusterId strfmt.UUID) ([]*common.Host, error) {
 	return b.hostApi.GetKnownApprovedHosts(clusterId)
+}
+
+// EventsSubscribe will register a call back url on a given even
+// This url will be called in case the event occur
+func (b *bareMetalInventory) EventsSubscribe(ctx context.Context, params installer.V2EventsSubscribeParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Infof("EventsSubscribe: %+v", params)
+
+	txSuccess := false
+	tx := b.db.Begin()
+	defer func() {
+		if !txSuccess {
+			log.Error("EventsSubscribe failed")
+			tx.Rollback()
+		}
+		if r := recover(); r != nil {
+			log.Errorf("EventsSubscribe failed to recover: %s", r)
+			log.Error(string(debug.Stack()))
+			tx.Rollback()
+		}
+	}()
+
+	if params.NewEventSubscriptionParams.ClusterID == nil {
+		return common.NewApiError(http.StatusBadRequest, fmt.Errorf("Event subscription require cluster id"))
+	}
+	// TODO: verify the event name
+	// TODO: verify the url is valid
+
+	cluster, err := b.GetClusterInternal(ctx, installer.V2GetClusterParams{ClusterID: *params.NewEventSubscriptionParams.ClusterID})
+	if err != nil {
+		log.WithError(err).Errorf("failed to get cluster: %s", *params.NewEventSubscriptionParams.ClusterID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.NewApiError(http.StatusNotFound, err)
+		}
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+	b.log.Infof("Adding event subsctiption for cluster: %s", cluster.ID)
+	id := strfmt.UUID(uuid.New().String())
+	e := &models.EventSubscription{
+		ID:        &id,
+		ClusterID: params.NewEventSubscriptionParams.ClusterID,
+		EventName: params.NewEventSubscriptionParams.EventName,
+		URL:       params.NewEventSubscriptionParams.URL,
+		Status:    swag.String("Pending"),
+	}
+
+	if err = b.db.Create(e).Error; err != nil {
+		log.Error(err)
+		return installer.NewV2EventsSubscribeInternalServerError().
+			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+
+	}
+
+	if err = tx.Commit().Error; err != nil {
+		log.Error(err)
+		return installer.NewV2EventsSubscribeInternalServerError().
+			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+	}
+	txSuccess = true
+
+	return installer.NewV2EventsSubscribeCreated().WithPayload(e)
 }
 
 // In case cpu architecture is not x86_64 and platform is baremetal, we should extract openshift-baremetal-installer

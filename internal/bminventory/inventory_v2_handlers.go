@@ -780,3 +780,26 @@ func (b *bareMetalInventory) GetInfraEnvPresignedFileURL(ctx context.Context, pa
 		},
 	}
 }
+
+func (b *bareMetalInventory) V2EventsSubscribe(ctx context.Context, params installer.V2EventsSubscribeParams) middleware.Responder {
+	return b.EventsSubscribe(ctx, params)
+}
+
+func (b *bareMetalInventory) V2EventsSubscriptionDelete(ctx context.Context, params installer.V2EventsSubscriptionDeleteParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Debugf("V2EventsSubscriptionDelete doing noting for no", params)
+	return installer.NewV2EventsSubscriptionDeleteInternalServerError()
+}
+
+func (b *bareMetalInventory) V2EventsSubscriptionGet(ctx context.Context, params installer.V2EventsSubscriptionGetParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Debugf("V2EventsSubscriptionGet doing noting for no", params)
+	return installer.NewV2EventsSubscriptionDeleteInternalServerError()
+}
+
+func (b *bareMetalInventory) V2EventsSubscriptionList(ctx context.Context, params installer.V2EventsSubscriptionListParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Debugf("V2EventsSubscriptionGet doing noting for no", params)
+	return installer.NewV2EventsSubscriptionDeleteInternalServerError()
+
+}
