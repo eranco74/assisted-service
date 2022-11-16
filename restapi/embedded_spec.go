@@ -2683,6 +2683,269 @@ func init() {
         }
       }
     },
+    "/v2/events/subscription": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Get events subscriptions.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscriptionList",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster id.",
+            "name": "cluster_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-subscription-list"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Subscribe a URL to be called upon events for a cluster.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscribe",
+        "parameters": [
+          {
+            "description": "The properties describing the event subscription.",
+            "name": "new-event-subscription-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/event-subscription-create"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-subscription"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/v2/events/subscription/{subscription_id}": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Get events subscription.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscriptionGet",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription id.",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-subscription"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Delete events subscription.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscriptionDelete",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription id.",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/feature-support-levels": {
       "get": {
         "security": [
@@ -6818,6 +7081,69 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/event"
+      }
+    },
+    "event-subscription": {
+      "type": "object",
+      "required": [
+        "id",
+        "event_name",
+        "cluster_id",
+        "url",
+        "status"
+      ],
+      "properties": {
+        "cluster_id": {
+          "description": "Cluster id",
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_name": {
+          "description": "The name oif the event",
+          "type": "string"
+        },
+        "id": {
+          "description": "Subscription id",
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "description": "description of the url call result.",
+          "type": "string"
+        },
+        "url": {
+          "description": "The url to call.",
+          "type": "string"
+        }
+      }
+    },
+    "event-subscription-create": {
+      "type": "object",
+      "required": [
+        "event_name",
+        "cluster_id",
+        "url"
+      ],
+      "properties": {
+        "cluster_id": {
+          "description": "Cluster id",
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_name": {
+          "description": "The name of the event",
+          "type": "string"
+        },
+        "url": {
+          "description": "The url to call.",
+          "type": "string"
+        }
+      }
+    },
+    "event-subscription-list": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/event-subscription"
       }
     },
     "feature-support-level": {
@@ -12125,6 +12451,269 @@ func init() {
         }
       }
     },
+    "/v2/events/subscription": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Get events subscriptions.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscriptionList",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cluster id.",
+            "name": "cluster_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-subscription-list"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Subscribe a URL to be called upon events for a cluster.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscribe",
+        "parameters": [
+          {
+            "description": "The properties describing the event subscription.",
+            "name": "new-event-subscription-params",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/event-subscription-create"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-subscription"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/v2/events/subscription/{subscription_id}": {
+      "get": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Get events subscription.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscriptionGet",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription id.",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "schema": {
+              "$ref": "#/definitions/event-subscription"
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "userAuth": [
+              "admin",
+              "read-only-admin",
+              "user"
+            ]
+          },
+          {
+            "urlAuth": []
+          }
+        ],
+        "description": "Delete events subscription.",
+        "tags": [
+          "events"
+        ],
+        "operationId": "v2EventsSubscriptionDelete",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription id.",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "403": {
+            "description": "Forbidden.",
+            "schema": {
+              "$ref": "#/definitions/infra_error"
+            }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/feature-support-levels": {
       "get": {
         "security": [
@@ -16395,6 +16984,69 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/event"
+      }
+    },
+    "event-subscription": {
+      "type": "object",
+      "required": [
+        "id",
+        "event_name",
+        "cluster_id",
+        "url",
+        "status"
+      ],
+      "properties": {
+        "cluster_id": {
+          "description": "Cluster id",
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_name": {
+          "description": "The name oif the event",
+          "type": "string"
+        },
+        "id": {
+          "description": "Subscription id",
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "description": "description of the url call result.",
+          "type": "string"
+        },
+        "url": {
+          "description": "The url to call.",
+          "type": "string"
+        }
+      }
+    },
+    "event-subscription-create": {
+      "type": "object",
+      "required": [
+        "event_name",
+        "cluster_id",
+        "url"
+      ],
+      "properties": {
+        "cluster_id": {
+          "description": "Cluster id",
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_name": {
+          "description": "The name of the event",
+          "type": "string"
+        },
+        "url": {
+          "description": "The url to call.",
+          "type": "string"
+        }
+      }
+    },
+    "event-subscription-list": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/event-subscription"
       }
     },
     "feature-support-level": {
