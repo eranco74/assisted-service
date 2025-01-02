@@ -2729,7 +2729,7 @@ paths:
           schema:
             type: array
             items:
-              type: string
+              $ref: '#/definitions/bundle'
         "500":
           description: Internal server error
           schema:
