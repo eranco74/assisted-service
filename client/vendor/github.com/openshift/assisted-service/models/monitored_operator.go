@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -18,6 +19,9 @@ import (
 //
 // swagger:model monitored-operator
 type MonitoredOperator struct {
+
+	// List of bundles associated with the operator. Can be empty.
+	Bundles []Bundle `json:"bundles" gorm:"type:text[]"`
 
 	// The cluster that this operator is associated with.
 	// Format: uuid
@@ -59,6 +63,10 @@ type MonitoredOperator struct {
 func (m *MonitoredOperator) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateBundles(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateClusterID(formats); err != nil {
 		res = append(res, err)
 	}
@@ -78,6 +86,27 @@ func (m *MonitoredOperator) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *MonitoredOperator) validateBundles(formats strfmt.Registry) error {
+	if swag.IsZero(m.Bundles) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Bundles); i++ {
+
+		if err := m.Bundles[i].Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("bundles" + "." + strconv.Itoa(i))
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("bundles" + "." + strconv.Itoa(i))
+			}
+			return err
+		}
+
+	}
+
 	return nil
 }
 
@@ -143,6 +172,10 @@ func (m *MonitoredOperator) validateStatusUpdatedAt(formats strfmt.Registry) err
 func (m *MonitoredOperator) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateBundles(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOperatorType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -154,6 +187,24 @@ func (m *MonitoredOperator) ContextValidate(ctx context.Context, formats strfmt.
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *MonitoredOperator) contextValidateBundles(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Bundles); i++ {
+
+		if err := m.Bundles[i].ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("bundles" + "." + strconv.Itoa(i))
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("bundles" + "." + strconv.Itoa(i))
+			}
+			return err
+		}
+
+	}
+
 	return nil
 }
 
