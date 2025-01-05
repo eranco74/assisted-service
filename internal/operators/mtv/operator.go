@@ -26,6 +26,7 @@ var Operator = models.MonitoredOperator{
 	OperatorType:     models.OperatorTypeOlm,
 	SubscriptionName: Subscription,
 	TimeoutSeconds:   60 * 60,
+	Bundles:          []models.BundleName{models.BundleNameVirtualization},
 }
 
 func NewMTVOperator(log logrus.FieldLogger) *operator {
@@ -176,4 +177,9 @@ func (o *operator) GenerateManifests(cluster *common.Cluster) (map[string][]byte
 
 func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDMTV
+}
+
+// GetBundleLabels returns the bundle labels for the MTV operator
+func (o *operator) GetBundleLabels() []models.BundleName {
+	return Operator.Bundles
 }

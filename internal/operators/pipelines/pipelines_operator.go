@@ -18,6 +18,7 @@ var Operator = models.MonitoredOperator{
 	OperatorType:     models.OperatorTypeOlm,
 	SubscriptionName: "openshift-pipelines-operator-rh",
 	TimeoutSeconds:   30 * 60,
+	Bundles:          []models.BundleName{models.BundleNameOpenshiftai},
 }
 
 // operator is an pipelines OLM operator plugin.
@@ -137,4 +138,8 @@ func (o *operator) GetPreflightRequirements(context context.Context,
 
 func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDPIPELINES
+}
+
+func (o *operator) GetBundleLabels() []models.BundleName {
+	return Operator.Bundles
 }

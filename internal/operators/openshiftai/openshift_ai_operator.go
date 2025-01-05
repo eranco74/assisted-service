@@ -27,6 +27,7 @@ var Operator = models.MonitoredOperator{
 	OperatorType:     models.OperatorTypeOlm,
 	SubscriptionName: "rhods-operator",
 	TimeoutSeconds:   30 * 60,
+	Bundles:          []models.BundleName{models.BundleNameOpenshiftai},
 }
 
 // operator is an OpenShift AI OLM operator plugin.
@@ -312,4 +313,8 @@ func (o *operator) GetSupportedArchitectures() []string {
 
 func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDOPENSHIFTAI
+}
+
+func (o *operator) GetBundleLabels() []models.BundleName {
+	return Operator.Bundles
 }

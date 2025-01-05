@@ -18,6 +18,7 @@ var Operator = models.MonitoredOperator{
 	OperatorType:     models.OperatorTypeOlm,
 	SubscriptionName: "servicemeshoperator",
 	TimeoutSeconds:   30 * 60,
+	Bundles:          []models.BundleName{models.BundleNameOpenshiftai},
 }
 
 // operator is an service mesh OLM operator plugin.
@@ -136,4 +137,8 @@ func (o *operator) GetPreflightRequirements(context context.Context,
 
 func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDSERVICEMESH
+}
+
+func (o *operator) GetBundleLabels() []models.BundleName {
+	return Operator.Bundles
 }
