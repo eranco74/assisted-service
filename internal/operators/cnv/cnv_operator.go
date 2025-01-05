@@ -37,6 +37,7 @@ var Operator = models.MonitoredOperator{
 	OperatorType:     models.OperatorTypeOlm,
 	SubscriptionName: "hco-operatorhub",
 	TimeoutSeconds:   60 * 60,
+	Bundles:          []models.Bundle{models.BundleVirtualization},
 }
 
 // NewCNVOperator creates new instance of a Container Native Virtualization installation plugin
@@ -332,4 +333,8 @@ func validDiscoverableSNODisk(disks []*models.Disk, installationDiskID string, d
 
 func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDCNV
+}
+
+func (o *operator) GetBundleLabels() []models.Bundle {
+	return Operator.Bundles
 }

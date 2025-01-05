@@ -186,3 +186,7 @@ func (o *operator) GetPreflightRequirements(context context.Context,
 func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDNVIDIAGPU
 }
+
+func (o *operator) GetBundleLabels() []models.Bundle {
+	return Operator.Bundles
+}

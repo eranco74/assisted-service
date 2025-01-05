@@ -312,6 +312,11 @@ func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDODF
 }
 
+// GetBundleLabels returns the bundle labels for the ODF operator
+func (o *operator) GetBundleLabels() []models.Bundle {
+	return Operator.Bundles
+}
+
 func capitalizeFirstLetter(s string) string {
 	if len(s) == 0 {
 		return s

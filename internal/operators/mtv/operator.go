@@ -177,3 +177,8 @@ func (o *operator) GenerateManifests(cluster *common.Cluster) (map[string][]byte
 func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDMTV
 }
+
+// GetBundleLabels returns the bundle labels for the MTV operator
+func (o *operator) GetBundleLabels() []models.Bundle {
+	return Operator.Bundles
+}
