@@ -26,7 +26,7 @@ type V2GetBundlesOK struct {
 	/*
 	  In: Body
 	*/
-	Payload []models.Bundle `json:"body,omitempty"`
+	Payload []*models.Bundle `json:"body,omitempty"`
 }
 
 // NewV2GetBundlesOK creates V2GetBundlesOK with default headers values
@@ -36,13 +36,13 @@ func NewV2GetBundlesOK() *V2GetBundlesOK {
 }
 
 // WithPayload adds the payload to the v2 get bundles o k response
-func (o *V2GetBundlesOK) WithPayload(payload []models.Bundle) *V2GetBundlesOK {
+func (o *V2GetBundlesOK) WithPayload(payload []*models.Bundle) *V2GetBundlesOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the v2 get bundles o k response
-func (o *V2GetBundlesOK) SetPayload(payload []models.Bundle) {
+func (o *V2GetBundlesOK) SetPayload(payload []*models.Bundle) {
 	o.Payload = payload
 }
 
@@ -53,7 +53,7 @@ func (o *V2GetBundlesOK) WriteResponse(rw http.ResponseWriter, producer runtime.
 	payload := o.Payload
 	if payload == nil {
 		// return empty array
-		payload = make([]models.Bundle, 0, 50)
+		payload = make([]*models.Bundle, 0, 50)
 	}
 
 	if err := producer.Produce(rw, payload); err != nil {

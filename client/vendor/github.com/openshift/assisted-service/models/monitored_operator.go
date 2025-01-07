@@ -21,7 +21,7 @@ import (
 type MonitoredOperator struct {
 
 	// List of bundles associated with the operator. Can be empty.
-	Bundles []Bundle `json:"bundles" gorm:"type:text[]"`
+	Bundles []*Bundle `json:"bundles"`
 
 	// The cluster that this operator is associated with.
 	// Format: uuid
@@ -95,14 +95,19 @@ func (m *MonitoredOperator) validateBundles(formats strfmt.Registry) error {
 	}
 
 	for i := 0; i < len(m.Bundles); i++ {
+		if swag.IsZero(m.Bundles[i]) { // not required
+			continue
+		}
 
-		if err := m.Bundles[i].Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("bundles" + "." + strconv.Itoa(i))
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("bundles" + "." + strconv.Itoa(i))
+		if m.Bundles[i] != nil {
+			if err := m.Bundles[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("bundles" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("bundles" + "." + strconv.Itoa(i))
+				}
+				return err
 			}
-			return err
 		}
 
 	}
@@ -194,13 +199,15 @@ func (m *MonitoredOperator) contextValidateBundles(ctx context.Context, formats 
 
 	for i := 0; i < len(m.Bundles); i++ {
 
-		if err := m.Bundles[i].ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("bundles" + "." + strconv.Itoa(i))
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("bundles" + "." + strconv.Itoa(i))
+		if m.Bundles[i] != nil {
+			if err := m.Bundles[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("bundles" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("bundles" + "." + strconv.Itoa(i))
+				}
+				return err
 			}
-			return err
 		}
 
 	}

@@ -6221,7 +6221,8 @@ func init() {
       "enum": [
         "Virtualization",
         "Openshift AI"
-      ]
+      ],
+      "x-nullable": true
     },
     "cluster": {
       "type": "object",
@@ -9602,7 +9603,7 @@ func init() {
           "items": {
             "$ref": "#/definitions/bundle"
           },
-          "x-go-custom-tag": "gorm:\"type:text[]\""
+          "x-go-custom-tag": "gorm:\"default:'{}'\""
         },
         "cluster_id": {
           "description": "The cluster that this operator is associated with.",
@@ -17249,7 +17250,8 @@ func init() {
       "enum": [
         "Virtualization",
         "Openshift AI"
-      ]
+      ],
+      "x-nullable": true
     },
     "cluster": {
       "type": "object",
@@ -20588,7 +20590,7 @@ func init() {
           "items": {
             "$ref": "#/definitions/bundle"
           },
-          "x-go-custom-tag": "gorm:\"type:text[]\""
+          "x-go-custom-tag": "gorm:\"default:'{}'\""
         },
         "cluster_id": {
           "description": "The cluster that this operator is associated with.",

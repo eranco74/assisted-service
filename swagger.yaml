@@ -4091,7 +4091,7 @@ definitions:
         description: Time at which the operator was last updated.
       bundles:
         type: array
-        x-go-custom-tag: gorm:"type:text[]"
+        x-go-custom-tag: gorm:"default:'{}'"
         description: List of bundles associated with the operator. Can be empty.
         items:
           $ref: '#/definitions/bundle'
@@ -4138,6 +4138,7 @@ definitions:
 
   bundle:
     type: string
+    x-nullable: true
     enum: ['Virtualization', 'Openshift AI']
     description: The name of the bundle.
 
