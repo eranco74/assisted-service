@@ -53,10 +53,10 @@ func (mr *MockOperatorMockRecorder) GenerateManifests(arg0 interface{}) *gomock.
 }
 
 // GetBundleLabels mocks base method.
-func (m *MockOperator) GetBundleLabels() []models.Bundle {
+func (m *MockOperator) GetBundleLabels() []*models.Bundle {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBundleLabels")
-	ret0, _ := ret[0].([]models.Bundle)
+	ret0, _ := ret[0].([]*models.Bundle)
 	return ret0
 }
 

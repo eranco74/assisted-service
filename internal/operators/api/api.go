@@ -56,7 +56,7 @@ type Operator interface {
 	// GetFeatureSupportID returns the operator unique feature-support ID
 	GetFeatureSupportID() models.FeatureSupportLevelID
 	// GetBundles returns the bundles associated with the operator
-	GetBundleLabels() []models.Bundle
+	GetBundleLabels() []*models.Bundle
 }
 
 // Storage Operator provide a generic API for storage operators

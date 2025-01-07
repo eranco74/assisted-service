@@ -139,6 +139,6 @@ func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDPIPELINES
 }
 
-func (o *operator) GetBundleLabels() []models.Bundle {
+func (o *operator) GetBundleLabels() []*models.Bundle {
 	return Operator.Bundles
 }

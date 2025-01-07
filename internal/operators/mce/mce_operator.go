@@ -218,6 +218,6 @@ func GetMinDiskSizeGB(cluster *models.Cluster) int64 {
 }
 
 // GetBundleLabels returns the bundle labels for the MCE operator
-func (o *operator) GetBundleLabels() []models.Bundle {
+func (o *operator) GetBundleLabels() []*models.Bundle {
 	return Operator.Bundles
 }

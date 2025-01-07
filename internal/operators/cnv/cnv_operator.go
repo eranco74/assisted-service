@@ -37,7 +37,7 @@ var Operator = models.MonitoredOperator{
 	OperatorType:     models.OperatorTypeOlm,
 	SubscriptionName: "hco-operatorhub",
 	TimeoutSeconds:   60 * 60,
-	Bundles:          []models.Bundle{models.BundleVirtualization},
+	Bundles:          []*models.Bundle{models.NewBundle(models.BundleVirtualization)},
 }
 
 // NewCNVOperator creates new instance of a Container Native Virtualization installation plugin
@@ -335,6 +335,6 @@ func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 	return models.FeatureSupportLevelIDCNV
 }
 
-func (o *operator) GetBundleLabels() []models.Bundle {
+func (o *operator) GetBundleLabels() []*models.Bundle {
 	return Operator.Bundles
 }

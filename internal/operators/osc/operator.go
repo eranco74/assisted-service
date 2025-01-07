@@ -184,6 +184,6 @@ func (o *operator) GetFeatureSupportID() models.FeatureSupportLevelID {
 }
 
 // GetBundleLabels returns the bundle labels for the OSC operator
-func (o *operator) GetBundleLabels() []models.Bundle {
+func (o *operator) GetBundleLabels() []*models.Bundle {
 	return Operator.Bundles
 }

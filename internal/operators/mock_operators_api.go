@@ -80,10 +80,10 @@ func (mr *MockAPIMockRecorder) GenerateManifests(arg0, arg1 interface{}) *gomock
 }
 
 // GetBundles mocks base method.
-func (m *MockAPI) GetBundles() []models.Bundle {
+func (m *MockAPI) GetBundles() []*models.Bundle {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBundles")
-	ret0, _ := ret[0].([]models.Bundle)
+	ret0, _ := ret[0].([]*models.Bundle)
 	return ret0
 }
 

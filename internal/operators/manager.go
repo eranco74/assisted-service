@@ -80,7 +80,7 @@ type API interface {
 	// EnsureOperatorPrerequisite Ensure that for the given operators has the base prerequisite for installation
 	EnsureOperatorPrerequisite(cluster *common.Cluster, openshiftVersion string, cpuArchitecture string, operators []*models.MonitoredOperator) error
 	// GetBundles returns the list of available bundles
-	GetBundles() []models.Bundle
+	GetBundles() []*models.Bundle
 	// GetOperatorsByBundle returns the operators associated with a specific bundle
 	GetOperatorsByBundle(bundleName models.Bundle) ([]models.OperatorProperties, error)
 }
@@ -520,10 +520,10 @@ func (mgr *Manager) EnsureOperatorPrerequisite(cluster *common.Cluster, openshif
 }
 
 // GetBundles returns a list of available bundles.
-func (mgr *Manager) GetBundles() []models.Bundle {
-	return []models.Bundle{
-		models.BundleVirtualization,
-		models.BundleOpenshiftAI,
+func (mgr *Manager) GetBundles() []*models.Bundle {
+	return []*models.Bundle{
+		models.NewBundle(models.BundleOpenshiftAI),
+		models.NewBundle(models.BundleVirtualization),
 	}
 }
 
@@ -532,7 +532,7 @@ func (mgr *Manager) GetOperatorsByBundle(bundleName models.Bundle) ([]models.Ope
 	var operators []models.OperatorProperties
 	for _, operator := range mgr.olmOperators {
 		for _, bundle := range operator.GetBundleLabels() {
-			if bundle == bundleName {
+			if *bundle == bundleName {
 				operators = append(operators, operator.GetProperties())
 				break
 			}
