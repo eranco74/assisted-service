@@ -312,7 +312,10 @@ func main() {
 	eventsHandler := createEventsHandler(crdEventsHandler, db, authzHandler, notificationStream, log)
 
 	prometheusRegistry := prometheus.DefaultRegisterer
-	metricsManager := metrics.NewMetricsManager(prometheusRegistry, eventsHandler)
+	metricsManagerConfig := &metrics.MetricsManagerConfig{
+		DirectoryUsageMonitorConfig: metrics.DirectoryUsageMonitorConfig{
+			Directories: []string{Options.WorkDir}}}
+	metricsManager := metrics.NewMetricsManager(prometheusRegistry, eventsHandler, metrics.NewOSDiskStatsHelper(), metricsManagerConfig, log)
 	if ocmClient != nil {
 		//inject the metric server to the ocm client for purpose of
 		//performance monitoring the calls to ACM. This could not be done
@@ -476,7 +479,7 @@ func main() {
 	failOnError(err, "failed to create valid bm config S3 endpoint URL from %s", Options.BMConfig.S3EndpointURL)
 	Options.BMConfig.S3EndpointURL = newUrl
 
-	generator := generator.New(log, objectHandler, Options.GeneratorConfig, Options.WorkDir, providerRegistry, manifestsApi)
+	generator := generator.New(log, objectHandler, Options.GeneratorConfig, Options.WorkDir, providerRegistry, manifestsApi, eventsHandler)
 	var crdUtils bminventory.CRDUtils
 	if ctrlMgr != nil {
 		crdUtils = controllers.NewCRDUtils(ctrlMgr.GetClient(), hostApi)
@@ -620,6 +623,9 @@ func main() {
 				InsecureIPXEURLs:    generateInsecureIPXEURLs,
 			}).SetupWithManager(ctrlMgr), "unable to create controller InfraEnv")
 
+			spokeClientFactory, err := spoke_k8s_client.NewFactory(log, nil)
+			failOnError(err, "unable to create spoke client factory")
+
 			cluster_client := ctrlMgr.GetClient()
 			cluster_reader := ctrlMgr.GetAPIReader()
 			failOnError((&controllers.ClusterDeploymentsReconciler{
@@ -636,7 +642,7 @@ func main() {
 				PullSecretHandler:             controllers.NewPullSecretHandler(cluster_client, cluster_reader, bm),
 				AuthType:                      Options.Auth.AuthType,
 				VersionsHandler:               versionHandler,
-				SpokeK8sClientFactory:         spoke_k8s_client.NewSpokeK8sClientFactory(log),
+				SpokeK8sClientFactory:         spokeClientFactory,
 				MirrorRegistriesConfigBuilder: mirrorregistries.New(),
 			}).SetupWithManager(ctrlMgr), "unable to create controller ClusterDeployment")
 
@@ -649,7 +655,7 @@ func main() {
 				CRDEventsHandler:           crdEventsHandler,
 				ServiceBaseURL:             Options.BMConfig.ServiceBaseURL,
 				AuthType:                   Options.Auth.AuthType,
-				SpokeK8sClientFactory:      spoke_k8s_client.NewSpokeK8sClientFactory(log),
+				SpokeK8sClientFactory:      spokeClientFactory,
 				ApproveCsrsRequeueDuration: Options.ApproveCsrsRequeueDuration,
 				AgentContainerImage:        Options.BMConfig.AgentDockerImg,
 				HostFSMountDir:             hostFSMountDir,
@@ -661,7 +667,7 @@ func main() {
 				Log:                   log,
 				Scheme:                ctrlMgr.GetScheme(),
 				Installer:             bm,
-				SpokeK8sClientFactory: spoke_k8s_client.NewSpokeK8sClientFactory(log),
+				SpokeK8sClientFactory: spokeClientFactory,
 				ConvergedFlowEnabled:  useConvergedFlow,
 				PauseProvisionedBMHs:  Options.PauseProvisionedBMHs,
 				Drainer:               &controllers.KubectlDrainer{},

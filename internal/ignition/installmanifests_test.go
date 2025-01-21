@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/constants"
+	eventsapi "github.com/openshift/assisted-service/internal/events/api"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	manifestsapi "github.com/openshift/assisted-service/internal/manifests/api"
 	"github.com/openshift/assisted-service/internal/network"
@@ -77,17 +78,18 @@ var _ = Describe("Bootstrap Ignition Update", func() {
 	  }`
 
 	var (
-		err          error
-		examplePath  string
-		db           *gorm.DB
-		dbName       string
-		bmh          *bmh_v1alpha1.BareMetalHost
-		config       *config_32_types.Config
-		mockS3Client *s3wrapper.MockAPI
-		workDir      string
-		cluster      *common.Cluster
-		ctrl         *gomock.Controller
-		manifestsAPI *manifestsapi.MockManifestsAPI
+		err           error
+		examplePath   string
+		db            *gorm.DB
+		dbName        string
+		bmh           *bmh_v1alpha1.BareMetalHost
+		config        *config_32_types.Config
+		mockS3Client  *s3wrapper.MockAPI
+		workDir       string
+		cluster       *common.Cluster
+		ctrl          *gomock.Controller
+		manifestsAPI  *manifestsapi.MockManifestsAPI
+		eventsHandler eventsapi.Handler
 	)
 
 	BeforeEach(func() {
@@ -101,6 +103,7 @@ var _ = Describe("Bootstrap Ignition Update", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockS3Client = s3wrapper.NewMockAPI(ctrl)
 		manifestsAPI = manifestsapi.NewMockManifestsAPI(ctrl)
+		eventsHandler = eventsapi.NewMockHandler(ctrl)
 		cluster = testCluster()
 		cluster.Hosts = []*models.Host{
 			{
@@ -110,7 +113,7 @@ var _ = Describe("Bootstrap Ignition Update", func() {
 			},
 		}
 		db, dbName = common.PrepareTestDB()
-		g := NewGenerator(workDir, "", cluster, "", "", "", "", mockS3Client, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+		g := NewGenerator(workDir, "", cluster, "", "", "", "", mockS3Client, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 		Expect(g.updateBootstrap(context.Background(), examplePath)).To(Succeed())
 
@@ -238,15 +241,16 @@ SV4bRR9i0uf+xQ/oYRvugQ25Q7EahO5hJIWRf4aULbk36Zpw3++v2KFnF26zqwB6
 -----END CERTIFICATE-----`
 
 	var (
-		masterPath   string
-		workerPath   string
-		caCertPath   string
-		dbName       string
-		db           *gorm.DB
-		cluster      *common.Cluster
-		workDir      string
-		ctrl         *gomock.Controller
-		manifestsAPI *manifestsapi.MockManifestsAPI
+		masterPath    string
+		workerPath    string
+		caCertPath    string
+		dbName        string
+		db            *gorm.DB
+		cluster       *common.Cluster
+		workDir       string
+		ctrl          *gomock.Controller
+		manifestsAPI  *manifestsapi.MockManifestsAPI
+		eventsHandler eventsapi.Handler
 	)
 
 	BeforeEach(func() {
@@ -269,6 +273,7 @@ SV4bRR9i0uf+xQ/oYRvugQ25Q7EahO5hJIWRf4aULbk36Zpw3++v2KFnF26zqwB6
 
 		ctrl = gomock.NewController(GinkgoT())
 		manifestsAPI = manifestsapi.NewMockManifestsAPI(ctrl)
+		eventsHandler = eventsapi.NewMockHandler(ctrl)
 	})
 
 	AfterEach(func() {
@@ -278,7 +283,7 @@ SV4bRR9i0uf+xQ/oYRvugQ25Q7EahO5hJIWRf4aULbk36Zpw3++v2KFnF26zqwB6
 
 	Describe("update ignitions", func() {
 		It("with ca cert file", func() {
-			g := NewGenerator(workDir, "", cluster, "", "", caCertPath, "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", caCertPath, "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 			err := g.updateIgnitions()
 			Expect(err).NotTo(HaveOccurred())
@@ -300,7 +305,7 @@ SV4bRR9i0uf+xQ/oYRvugQ25Q7EahO5hJIWRf4aULbk36Zpw3++v2KFnF26zqwB6
 			Expect(file.Path).To(Equal(common.HostCACertPath))
 		})
 		It("with no ca cert file", func() {
-			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 			err := g.updateIgnitions()
 			Expect(err).NotTo(HaveOccurred())
@@ -319,7 +324,7 @@ SV4bRR9i0uf+xQ/oYRvugQ25Q7EahO5hJIWRf4aULbk36Zpw3++v2KFnF26zqwB6
 		})
 		Context("DHCP generation", func() {
 			It("Definitions only", func() {
-				g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+				g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 				g.encodedDhcpFileContents = "data:,abc"
 				err := g.updateIgnitions()
@@ -337,7 +342,7 @@ SV4bRR9i0uf+xQ/oYRvugQ25Q7EahO5hJIWRf4aULbk36Zpw3++v2KFnF26zqwB6
 			})
 		})
 		It("Definitions+leases", func() {
-			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 			g.encodedDhcpFileContents = "data:,abc"
 			cluster.ApiVipLease = "api"
@@ -424,13 +429,14 @@ var _ = Describe("createHostIgnitions", func() {
 		}`
 
 	var (
-		dbName       string
-		db           *gorm.DB
-		mockS3Client *s3wrapper.MockAPI
-		cluster      *common.Cluster
-		ctrl         *gomock.Controller
-		workDir      string
-		manifestsAPI *manifestsapi.MockManifestsAPI
+		dbName        string
+		db            *gorm.DB
+		mockS3Client  *s3wrapper.MockAPI
+		cluster       *common.Cluster
+		ctrl          *gomock.Controller
+		workDir       string
+		manifestsAPI  *manifestsapi.MockManifestsAPI
+		eventsHandler eventsapi.Handler
 	)
 
 	BeforeEach(func() {
@@ -449,6 +455,7 @@ var _ = Describe("createHostIgnitions", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockS3Client = s3wrapper.NewMockAPI(ctrl)
 		manifestsAPI = manifestsapi.NewMockManifestsAPI(ctrl)
+		eventsHandler = eventsapi.NewMockHandler(ctrl)
 		cluster = testCluster()
 	})
 
@@ -485,7 +492,7 @@ var _ = Describe("createHostIgnitions", func() {
 				host.ID = &id
 			}
 
-			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 			err := g.createHostIgnitions()
 			Expect(err).NotTo(HaveOccurred())
@@ -539,7 +546,7 @@ var _ = Describe("createHostIgnitions", func() {
 				host.ID = &id
 			}
 
-			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 			err := g.createHostIgnitions()
 			Expect(err).NotTo(HaveOccurred())
@@ -583,7 +590,7 @@ var _ = Describe("createHostIgnitions", func() {
 				host.ID = &id
 			}
 
-			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 			err := g.createHostIgnitions()
 			Expect(err).NotTo(HaveOccurred())
@@ -631,7 +638,7 @@ var _ = Describe("createHostIgnitions", func() {
 			host.ID = &id
 		}
 
-		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 		g.nodeIpAllocations = make(map[strfmt.UUID]*network.NodeIpAllocation)
 		for i, h := range cluster.Hosts {
 			g.nodeIpAllocations[*h.ID] = &network.NodeIpAllocation{
@@ -649,13 +656,121 @@ var _ = Describe("createHostIgnitions", func() {
 			config, _, err := config_32.Parse(ignBytes)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Validating nodeip hint was not added")
+			By("Validating nodeip hint was added")
 			var f *config_32_types.File
 			for fileidx, file := range config.Storage.Files {
 				if file.Node.Path == nodeIpHintFile {
 					f = &config.Storage.Files[fileidx]
 					Expect(*f.Node.User.Name).To(Equal("root"))
 					Expect(*f.FileEmbedded1.Contents.Source).To(Equal(fmt.Sprintf("data:,KUBELET_NODEIP_HINT=%s", "3.3.3.0")))
+					Expect(*f.FileEmbedded1.Mode).To(Equal(420))
+					Expect(*f.Node.Overwrite).To(Equal(true))
+				}
+			}
+		}
+	})
+
+	It("user-managed load balancer: expect hint to be created when node-ip allocations exist", func() {
+		cluster.Hosts = []*models.Host{
+			{
+				RequestedHostname: "master0.example.com",
+				Role:              models.HostRoleMaster,
+			},
+			{
+				RequestedHostname: "master1.example.com",
+				Role:              models.HostRoleMaster,
+			},
+			{
+				RequestedHostname: "master2.example.com",
+				Role:              models.HostRoleMaster,
+			},
+		}
+		cluster.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeFull)
+		cluster.LoadBalancer = &models.LoadBalancer{Type: models.LoadBalancerTypeUserManaged}
+
+		// create an ID for each host
+		for _, host := range cluster.Hosts {
+			id := strfmt.UUID(uuid.New().String())
+			host.ID = &id
+		}
+
+		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
+		g.nodeIpAllocations = make(map[strfmt.UUID]*network.NodeIpAllocation)
+
+		for i, h := range cluster.Hosts {
+			g.nodeIpAllocations[*h.ID] = &network.NodeIpAllocation{
+				NodeIp: fmt.Sprintf("3.3.3.%d", i+1),
+				HintIp: "3.3.3.0",
+				Cidr:   "3.3.3.0/24",
+			}
+		}
+		err := g.createHostIgnitions()
+		Expect(err).NotTo(HaveOccurred())
+
+		for _, host := range cluster.Hosts {
+			ignBytes, err := os.ReadFile(filepath.Join(workDir, fmt.Sprintf("%s-%s.ign", host.Role, host.ID)))
+			Expect(err).NotTo(HaveOccurred())
+			config, _, err := config_32.Parse(ignBytes)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Validating nodeip hint was added")
+			var f *config_32_types.File
+			for fileidx, file := range config.Storage.Files {
+				if file.Node.Path == nodeIpHintFile {
+					f = &config.Storage.Files[fileidx]
+					Expect(*f.Node.User.Name).To(Equal("root"))
+					Expect(*f.FileEmbedded1.Contents.Source).To(Equal(fmt.Sprintf("data:,KUBELET_NODEIP_HINT=%s", "3.3.3.0")))
+					Expect(*f.FileEmbedded1.Mode).To(Equal(420))
+					Expect(*f.Node.Overwrite).To(Equal(true))
+				}
+			}
+		}
+	})
+
+	It("cluster-managed load balancer: expect hint to be created when node-ip allocations exist", func() {
+		cluster.Hosts = []*models.Host{
+			{
+				RequestedHostname: "master0.example.com",
+				Role:              models.HostRoleMaster,
+			},
+			{
+				RequestedHostname: "master1.example.com",
+				Role:              models.HostRoleMaster,
+			},
+			{
+				RequestedHostname: "master2.example.com",
+				Role:              models.HostRoleMaster,
+			},
+		}
+		cluster.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeFull)
+		cluster.LoadBalancer = &models.LoadBalancer{Type: models.LoadBalancerTypeClusterManaged}
+		cluster.MachineNetworks = []*models.MachineNetwork{
+			{Cidr: "192.168.127.0/24"},
+		}
+
+		// create an ID for each host
+		for _, host := range cluster.Hosts {
+			id := strfmt.UUID(uuid.New().String())
+			host.ID = &id
+		}
+
+		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
+		err := g.createHostIgnitions()
+		Expect(err).NotTo(HaveOccurred())
+
+		for _, host := range cluster.Hosts {
+			ignBytes, err := os.ReadFile(filepath.Join(workDir, fmt.Sprintf("%s-%s.ign", host.Role, host.ID)))
+			Expect(err).NotTo(HaveOccurred())
+			config, _, err := config_32.Parse(ignBytes)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Validating nodeip hint was not added")
+			var f *config_32_types.File
+			for fileidx, file := range config.Storage.Files {
+				if file.Node.Path == nodeIpHintFile {
+					f = &config.Storage.Files[fileidx]
+					Expect(*f.Node.User.Name).To(Equal("root"))
+					Expect(*f.FileEmbedded1.Contents.Source).To(Equal(fmt.Sprintf("data:,KUBELET_NODEIP_HINT=%s", "192.168.127.0")))
 					Expect(*f.FileEmbedded1.Mode).To(Equal(420))
 					Expect(*f.Node.Overwrite).To(Equal(true))
 				}
@@ -672,7 +787,7 @@ var _ = Describe("createHostIgnitions", func() {
 			IgnitionConfigOverrides: `{"ignition": {"version": "3.2.0"}, "storage": {"files": [{"path": "/tmp/example", "contents": {"source": "data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj"}}]}}`,
 		}}
 
-		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 		err := g.createHostIgnitions()
 		Expect(err).NotTo(HaveOccurred())
@@ -743,7 +858,7 @@ spec:
 				MachineConfigPoolName: "infra",
 			}}
 
-			g := NewGenerator(workDir, "", cluster, "", "", "", "", mockS3Client, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", "", "", mockS3Client, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 			mockS3Client.EXPECT().ListObjectsByPrefixWithMetadata(gomock.Any(), filepath.Join(clusterID.String(), constants.ManifestFolder, models.ManifestFolderOpenshift)).Return([]s3wrapper.ObjectInfo{{Path: "mcp.yaml"}}, nil).Times(1)
 			mockS3Client.EXPECT().ListObjectsByPrefixWithMetadata(gomock.Any(), filepath.Join(clusterID.String(), constants.ManifestFolder, models.ManifestFolderManifests)).Times(1)
 			mockS3Client.EXPECT().Download(gomock.Any(), gomock.Any()).Return(io.NopCloser(strings.NewReader(mcp)), int64(0), nil)
@@ -769,7 +884,7 @@ spec:
 				MachineConfigPoolName: "infra",
 			}}
 
-			g := NewGenerator(workDir, "", cluster, "", "", "", "", mockS3Client, logrus.New(), nil, "", "", 5, manifestsAPI).(*installerGenerator)
+			g := NewGenerator(workDir, "", cluster, "", "", "", "", mockS3Client, logrus.New(), nil, "", "", 5, manifestsAPI, eventsHandler).(*installerGenerator)
 			mockS3Client.EXPECT().ListObjectsByPrefixWithMetadata(gomock.Any(), filepath.Join(clusterID.String(), constants.ManifestFolder, models.ManifestFolderOpenshift)).Return([]s3wrapper.ObjectInfo{{Path: "mcp.yaml"}}, nil).Times(1)
 			mockS3Client.EXPECT().ListObjectsByPrefixWithMetadata(gomock.Any(), filepath.Join(clusterID.String(), constants.ManifestFolder, models.ManifestFolderManifests)).Times(1)
 			mockS3Client.EXPECT().Download(gomock.Any(), gomock.Any()).Return(io.NopCloser(strings.NewReader(mc)), int64(0), nil)
@@ -1566,6 +1681,25 @@ var _ = Describe("Set kubelet node ip", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(basicEnvVars).Should(ContainElement("OPENSHIFT_INSTALL_BOOTSTRAP_NODE_IP=192.168.126.11"))
 	})
+	It("cluster-managed load balancer - bootstrap kubelet ip should be set when machine networks exist", func() {
+		cluster.LoadBalancer = &models.LoadBalancer{Type: models.LoadBalancerTypeClusterManaged}
+		basicEnvVars, err = generator.addBootstrapKubeletIpIfRequired(generator.log, basicEnvVars)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(basicEnvVars).Should(ContainElement("OPENSHIFT_INSTALL_BOOTSTRAP_NODE_IP=192.168.126.10"))
+	})
+	It("user-managed load balancer - bootstrap kubelet ip should be set when node-ip-allocations exist", func() {
+		cluster.LoadBalancer = &models.LoadBalancer{Type: models.LoadBalancerTypeUserManaged}
+		generator.nodeIpAllocations = map[strfmt.UUID]*network.NodeIpAllocation{
+			*cluster.Hosts[0].ID: {
+				NodeIp: "192.168.126.11",
+				HintIp: "192.168.126.0",
+				Cidr:   "192.168.126.0/24",
+			},
+		}
+		basicEnvVars, err = generator.addBootstrapKubeletIpIfRequired(generator.log, basicEnvVars)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(basicEnvVars).Should(ContainElement("OPENSHIFT_INSTALL_BOOTSTRAP_NODE_IP=192.168.126.11"))
+	})
 	It("should fail if no machine networks exists", func() {
 		cluster.MachineNetworks = []*models.MachineNetwork{}
 		basicEnvVars, err = generator.addBootstrapKubeletIpIfRequired(generator.log, basicEnvVars)
@@ -1575,9 +1709,10 @@ var _ = Describe("Set kubelet node ip", func() {
 
 var _ = Describe("Bare metal host generation", func() {
 	var (
-		workDir      string
-		ctrl         *gomock.Controller
-		manifestsAPI *manifestsapi.MockManifestsAPI
+		workDir       string
+		ctrl          *gomock.Controller
+		manifestsAPI  *manifestsapi.MockManifestsAPI
+		eventsHandler eventsapi.Handler
 	)
 
 	BeforeEach(func() {
@@ -1586,6 +1721,7 @@ var _ = Describe("Bare metal host generation", func() {
 		Expect(err).NotTo(HaveOccurred())
 		ctrl = gomock.NewController(GinkgoT())
 		manifestsAPI = manifestsapi.NewMockManifestsAPI(ctrl)
+		eventsHandler = eventsapi.NewMockHandler(ctrl)
 	})
 
 	AfterEach(func() {
@@ -1611,6 +1747,7 @@ var _ = Describe("Bare metal host generation", func() {
 				"",
 				5,
 				manifestsAPI,
+				eventsHandler,
 			).(*installerGenerator)
 
 			// The default host inventory used by these tests has two NICs, each with
@@ -1670,13 +1807,14 @@ var _ = Describe("Bare metal host generation", func() {
 
 var _ = Describe("Import Cluster TLS Certs for ephemeral installer", func() {
 	var (
-		certDir      string
-		dbName       string
-		db           *gorm.DB
-		cluster      *common.Cluster
-		workDir      string
-		ctrl         *gomock.Controller
-		manifestsAPI *manifestsapi.MockManifestsAPI
+		certDir       string
+		dbName        string
+		db            *gorm.DB
+		cluster       *common.Cluster
+		workDir       string
+		ctrl          *gomock.Controller
+		manifestsAPI  *manifestsapi.MockManifestsAPI
+		eventsHandler eventsapi.Handler
 	)
 
 	certFiles := []string{"test-cert.crt", "test-cert.key"}
@@ -1706,6 +1844,7 @@ var _ = Describe("Import Cluster TLS Certs for ephemeral installer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		ctrl = gomock.NewController(GinkgoT())
 		manifestsAPI = manifestsapi.NewMockManifestsAPI(ctrl)
+		eventsHandler = eventsapi.NewMockHandler(ctrl)
 	})
 
 	AfterEach(func() {
@@ -1714,7 +1853,7 @@ var _ = Describe("Import Cluster TLS Certs for ephemeral installer", func() {
 	})
 
 	It("copies the tls cert files", func() {
-		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", certDir, 5, manifestsAPI).(*installerGenerator)
+		g := NewGenerator(workDir, "", cluster, "", "", "", "", nil, logrus.New(), nil, "", certDir, 5, manifestsAPI, eventsHandler).(*installerGenerator)
 
 		err := g.importClusterTLSCerts(context.Background())
 		Expect(err).NotTo(HaveOccurred())

@@ -31,6 +31,8 @@ const controllerManifestFile = "custom_manifests.json"
 
 var storageOperatorsPriority = []string{odf.Operator.Name, lvm.Operator.Name}
 
+var validBundles = []string{operatorscommon.BundleVirtualization, operatorscommon.BundleOpenshiftai}
+
 // Manifest store the operator manifest used by assisted-installer to create CRs of the OLM.
 type Manifest struct {
 	// Name of the operator the CR manifest we want create
@@ -79,6 +81,10 @@ type API interface {
 	GetPreflightRequirementsBreakdownForCluster(ctx context.Context, cluster *common.Cluster) ([]*models.OperatorHardwareRequirements, error)
 	// EnsureOperatorPrerequisite Ensure that for the given operators has the base prerequisite for installation
 	EnsureOperatorPrerequisite(cluster *common.Cluster, openshiftVersion string, cpuArchitecture string, operators []*models.MonitoredOperator) error
+	// ListBundles returns the list of available bundles
+	ListBundles() []*models.Bundle
+	// GetBundle returns the Bundle object
+	GetBundle(bundleName string) (*models.Bundle, error)
 }
 
 // GetPreflightRequirementsBreakdownForCluster provides host requirements breakdown for each supported OLM operator
@@ -513,4 +519,44 @@ func (mgr *Manager) EnsureOperatorPrerequisite(cluster *common.Cluster, openshif
 	}
 
 	return nil
+}
+
+// ListBundles returns a list of available bundles.
+func (mgr *Manager) ListBundles() []*models.Bundle {
+	var bundles []*models.Bundle
+	for _, bundleName := range validBundles {
+			bundle, err :=  mgr.GetBundle(bundleName)
+			if err != nil{
+				mgr.log.Error(err)
+				continue
+			}
+			bundles = append(bundles, bundle)
+		}
+	return bundles
+}
+
+// GetBundle returns the Bundle object
+func (mgr *Manager) GetBundle(bundleName string) (*models.Bundle, error) {
+	if !mgr.isBundleValid(bundleName) {
+		return nil, fmt.Errorf("bundle '%s' is not supported", bundleName)
+	}
+	bundle := models.Bundle{Name: bundleName}
+	for _, operator := range mgr.olmOperators {
+		for _, operatorBundle := range operator.GetBundleLabels() {
+			if operatorBundle == bundle.Name {
+				bundle.Operators = append(bundle.Operators, operator.GetName())
+				break
+			}
+		}
+	}
+	return &bundle, nil
+}
+
+func (mgr *Manager) isBundleValid(bundleName string) bool {
+	for _, bundle := range validBundles {
+		if bundle == bundleName {
+			return true
+		}
+	}
+	return false
 }

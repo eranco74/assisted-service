@@ -666,13 +666,25 @@ func (v *validator) belongsToMachineCidr(c *validationContext) (ValidationStatus
 	if swag.StringValue(c.cluster.Kind) == models.ClusterKindAddHostsCluster {
 		return ValidationSuccess, "No machine network CIDR validation needed: Day2 cluster"
 	}
+
 	if c.inventory == nil || !network.IsMachineCidrAvailable(c.cluster) {
 		return ValidationPending, "Missing inventory or machine network CIDR"
 	}
-	if !network.IsHostInPrimaryMachineNetCidr(v.log, c.cluster, c.host) {
-		return ValidationFailure, "Host does not belong to machine network CIDRs. Verify that the host belongs to every CIDR listed under machine networks"
+
+	if !network.IsLoadBalancerUserManaged(c.cluster) {
+		if !network.IsHostInAllMachineNetworksCidr(v.log, c.cluster, c.host) {
+			return ValidationFailure, "Host does not belong to machine network CIDRs. Verify that the host belongs to every CIDR listed under machine networks"
+		}
+
+		return ValidationSuccess, "Host belongs to all machine network CIDRs"
 	}
-	return ValidationSuccess, "Host belongs to all machine network CIDRs"
+
+	// user-managed load balancer
+	if !network.IsHostInAtLeastOneMachineNetworkCidr(v.log, c.cluster, c.host) {
+		return ValidationFailure, "Host does not belong to any machine network CIDR. Verify that the host belongs to at least one CIDR listed under machine networks"
+	}
+
+	return ValidationSuccess, "Host belongs to at least one machine network CIDR"
 }
 
 func getRealHostname(host *models.Host, inventory *models.Inventory) string {
@@ -820,7 +832,7 @@ func (v *validator) belongsToMajorityGroup(c *validationContext) (ValidationStat
 	}
 
 	var status ValidationStatus
-	if swag.BoolValue(c.cluster.UserManagedNetworking) {
+	if swag.BoolValue(c.cluster.UserManagedNetworking) || network.IsLoadBalancerUserManaged(c.cluster) {
 		status = v.belongsToL3MajorityGroup(c, connectivity)
 	} else {
 		status = v.belongsToL2MajorityGroup(c, connectivity.MajorityGroups)
