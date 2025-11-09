@@ -330,10 +330,13 @@ func GetDiskEncryptionForDay2(log logrus.FieldLogger, host *models.Host) (*ignit
 		return nil, err
 	}
 
+	if response.Ignition == "" {
+		return nil, errors.New("Ignition is empty - can't get disk encryption")
+	}
 	// Parse ignition from APIVipConnectivity (LUKS is supported in version >= 3.2)
 	config, _, err := v3_2.Parse([]byte(response.Ignition))
 	if err != nil {
-		log.WithError(err).Warn("Ignition is empty or invalid - can't get disk encryption")
+		log.WithError(err).Info("Ignition is invalid - can't get disk encryption")
 		return nil, err
 	}
 
